@@ -1,0 +1,530 @@
+================================================================================
+          PANDUAN LENGKAP: CARA KERJA, ALUR, DAN LOGIKA SISTEM
+                     MARKET BASKET ANALYSIS — APRIORI
+================================================================================
+
+Dokumen ini menjelaskan secara rinci cara kerja setiap fitur, alur proses data,
+serta logika matematis algoritma Apriori yang diimplementasikan pada aplikasi ini.
+
+--------------------------------------------------------------------------------
+DAFTAR ISI:
+--------------------------------------------------------------------------------
+1. Pengantar dan Konsep Dasar Market Basket Analysis
+2. Logika Matematis Algoritma Apriori (Core Engine)
+3. Cara Kerja dan Alur Per Fitur:
+   - Fitur 1: Dashboard
+   - Fitur 2: Kelola Dataset (Upload, Preview, dan Normalisasi)
+   - Fitur 3: Data Transaksi
+   - Fitur 4: Konfigurasi Analisis Apriori
+   - Fitur 5: Halaman Hasil Analisis (4 Tab Rinci)
+   - Fitur 6: Riwayat Analisis
+   - Fitur 7: Laporan & Ekspor (PDF, Excel, Cetak)
+   - Fitur 8: Pengaturan Sistem & Profil
+4. Contoh Simulasi Perhitungan Manual (Studi Kasus 5 Transaksi)
+5. Tips Pemilihan Parameter & Integritas Data
+
+================================================================================
+1. PENGANTAR DAN KONSEP DASAR MARKET BASKET ANALYSIS
+================================================================================
+
+Market Basket Analysis (MBA) adalah teknik analisis data transaksi penjualan
+untuk menemukan hubungan atau pola pembelian produk yang cenderung dibeli
+secara bersamaan oleh pelanggan dalam satu kali belanja (satu keranjang).
+
+Sistem ini menggunakan metode Association Rule Mining dengan Algoritma Apriori.
+Seluruh perhitungan algoritma dibangun secara mandiri menggunakan bahasa PHP murni
+(Pure Engine) tanpa bantuan API atau library AI eksternal, sehingga hasil
+perhitungan 100% transparan, terukur, dan dapat diverifikasi secara matematis.
+
+Stack Teknologi:
+- Backend  : Laravel 13, PHP 8.4, MySQL 8.0
+- Frontend : Laravel Blade, Tailwind CSS v4, Alpine.js
+- Dokumen  : DomPDF (Export PDF), Maatwebsite Excel (Export XLSX)
+
+
+================================================================================
+2. LOGIKA MATEMATIS ALGORITMA APRIORI (CORE ENGINE)
+================================================================================
+
+Algoritma Apriori bekerja dengan prinsip dasar:
+"Jika suatu kombinasi item bersifat sering muncul (frequent), maka seluruh bagian
+ (subset) dari kombinasi tersebut pasti juga sering muncul."
+Sebaliknya:
+"Jika suatu subset tidak sering muncul (tidak memenuhi Minimum Support), maka
+ seluruh kombinasinya (superset) pasti tidak sering muncul dan langsung dieliminasi."
+
+Prinsip ini disebut sebagai "Apriori Pruning Property".
+
+A. STRUKTUR DATA TRANSAKSI
+--------------------------------------------------------------------------------
+Dalam analisis Apriori, transaksi dipandang sebagai himpunan item unik.
+Meskipun pelanggan membeli "Roti" sebanyak 5 buah dalam 1 nota, untuk perhitungan
+frekuensi asosiasi, "Roti" dihitung hadir sebanyak 1 kali (Binary Presence).
+Denominator utama (pembagi) adalah Total Transaksi yang valid dalam dataset.
+
+B. RUMUS-RUMUS UTAMA:
+--------------------------------------------------------------------------------
+1. SUPPORT
+   Mengukur seberapa sering suatu item atau kombinasi item muncul dalam seluruh
+   transaksi.
+
+   Rumus:
+   Support(X) = (Jumlah transaksi yang memuat X) / (Total Seluruh Transaksi)
+
+   Dalam Persentase:
+   Support(%) = Support(X) * 100%
+
+   Kriteria:
+   Itemset dinyatakan Lolos (Frequent) jika:
+   Support(X) >= Minimum Support
+
+2. CONFIDENCE
+   Mengukur tingkat kepastian atau probabilitas kondisional: jika pelanggan membeli
+   itemset Antecedent (A), seberapa besar kemungkinan pelanggan tersebut juga
+   membeli itemset Consequent (B).
+
+   Rumus:
+   Confidence(A -> B) = Support(A U B) / Support(A)
+
+   Atau dalam hitungan transaksi:
+   Confidence(A -> B) = (Jumlah transaksi memuat A dan B) / (Jumlah transaksi memuat A)
+
+   Kriteria:
+   Aturan (Rule) dinyatakan Valid jika:
+   Confidence(A -> B) >= Minimum Confidence
+
+3. LIFT RATIO
+   Mengukur kekuatan aturan asosiasi dibandingkan jika produk Antecedent (A) dan
+   Consequent (B) dibeli secara kebetulan/acak (independen).
+
+   Rumus:
+   Lift(A -> B) = Confidence(A -> B) / Support(B)
+                = Support(A U B) / (Support(A) * Support(B))
+
+   Interpretasi Nilai Lift:
+   - Lift > 1.0  : Asosiasi Positif. Pembelian produk A secara nyata meningkatkan
+                   kemungkinan dibelinya produk B. Pola ini sangat bernilai untuk
+                   bundling produk atau penempatan rak bersama.
+   - Lift = 1.0  : Independen. Pembelian A dan B tidak memiliki hubungan khusus
+                   secara statistik (hanya kebetulan).
+   - Lift < 1.0  : Asosiasi Negatif. Pembelian produk A justru menurunkan
+                   kemungkinan dibelinya produk B (bersifat substitusi atau saling
+                   menggantikan).
+
+C. TAHAPAN EKSEKUSI ALGORITMA APRIORI PADA SISTEM:
+--------------------------------------------------------------------------------
+Langkah 1: Menghitung C1 dan Menyeleksi L1 (Ukuran k = 1)
+- Sistem memindai seluruh transaksi.
+- Menghitung frekuensi kemunculan setiap item tunggal (Kandidat C1).
+- Menyaring item yang memiliki Support >= Minimum Support menjadi L1.
+- Item yang di bawah batas Minimum Support langsung digugurkan.
+
+Langkah 2: Menghasilkan Kandidat Ck (Ukuran k >= 2) — Join Step
+- Menggabungkan itemset yang lolos dari L(k-1).
+- Penggabungan dilakukan dengan membandingkan itemset yang memiliki (k-2) item
+  pertama identik, lalu menggabungkan item terakhirnya.
+- Item ID selalu diurutkan secara konsisten (numerik) agar tidak terjadi duplikasi
+  seperti kombinasi [Roti, Susu] dan [Susu, Roti].
+
+Langkah 3: Pruning Step (Pemangkasan Kandidat)
+- Untuk setiap kandidat di Ck, sistem memeriksa apakah seluruh subset berukuran
+  (k-1) ada di L(k-1).
+- Jika ada satu saja subset yang tidak lolos di iterasi sebelumnya, maka kandidat
+  tersebut langsung dihapus dari Ck tanpa perlu diperiksa ke database transaksi.
+
+Langkah 4: Menghitung Support Kandidat Ck dan Membentuk Lk
+- Sistem memindai transaksi untuk menghitung frekuensi kemunculan kandidat Ck
+  yang tersisa setelah pruning.
+- Kandidat dengan Support >= Minimum Support disimpan sebagai Lk (Frequent k-itemset).
+
+Langkah 5: Kondisi Berhenti
+- Langkah 2 sampai 4 diulang untuk k = 2, 3, 4, ...
+- Loop otomatis berhenti jika:
+  a. Tidak ada lagi kandidat baru yang dapat dibentuk (Ck kosong), ATAU
+  b. Tidak ada kandidat yang memenuhi Minimum Support (Lk kosong).
+
+Langkah 6: Pembentukan Association Rules
+- Dari seluruh frequent itemset yang memiliki ukuran k >= 2:
+- Sistem membagi itemset menjadi dua bagian non-kosong: Antecedent (A) dan Consequent (B),
+  di mana A U B = Itemset asal, dan A beririsan dengan B adalah himpunan kosong.
+- Sistem TIDAK HANYA menghasilkan aturan 1-ke-1, melainkan mendukung:
+  * 1-ke-1 : Roti -> Susu
+  * 2-ke-1 : Roti, Mentega -> Susu
+  * 1-ke-2 : Roti -> Susu, Mentega
+- Setiap aturan dihitung nilai Support, Confidence, dan Lift-nya.
+- Hanya aturan dengan Confidence >= Minimum Confidence (dan Lift >= Min Lift jika diisi)
+  yang disimpan ke database dan ditampilkan kepada pengguna.
+
+
+================================================================================
+3. CARA KERJA DAN ALUR PER FITUR
+================================================================================
+
+--------------------------------------------------------------------------------
+FITUR 1: DASHBOARD (/dashboard)
+--------------------------------------------------------------------------------
+Fungsi:
+Menjadi pusat ringkasan statistik dan aktivitas sistem secara real-time.
+
+Alur & Logika:
+1. Saat halaman dibuka, DashboardController mengeksekusi query agregat langsung
+   ke MySQL (COUNT riil, bukan hardcoded atau angka palsu):
+   - Total Dataset terunggah.
+   - Total Transaksi unik.
+   - Total Item/Produk unik.
+   - Total Analisis yang pernah dilakukan.
+   - Total Frequent Itemset yang berhasil diekstraksi.
+   - Total Association Rule yang terbentuk.
+2. Mengambil 5 riwayat analisis terbaru beserta parameter dan jumlah aturan.
+3. Mengambil 5 dataset terakhir beserta statistik transaksi.
+4. Jika database masih kosong, sistem otomatis menampilkan "Empty State" yang rapi
+   dengan tombol panduan untuk mengunggah dataset pertama.
+
+--------------------------------------------------------------------------------
+FITUR 2: KELOLA DATASET (/datasets)
+--------------------------------------------------------------------------------
+Fungsi:
+Mengunggah, memeriksa, memvalidasi, dan mengimpor file data transaksi penjualan.
+
+Alur Kerja:
+1. Pengguna memilih menu "Unggah Dataset Baru" (/datasets/create).
+2. Pengguna mengisi Nama Dataset, Deskripsi, dan memilih file (CSV atau XLSX).
+3. Pengguna menekan tombol "Lanjut: Pratinjau & Pemetaan Kolom".
+4. SISTEM MEMPROSES PRATINJAU (/datasets/preview):
+   - File disimpan sementara di storage lokal aman (`temp_imports`).
+   - Sistem membaca 10 baris pertama untuk ditampilkan kepada pengguna.
+   - Sistem mendeteksi otomatis header kolom file (Auto-Guess Mapping):
+     * Kolom kode transaksi (misal: transaction_id, kode_transaksi, invoice_no).
+     * Kolom nama barang (misal: item, product_name, nama_barang).
+     * Kolom kuantitas (opsional: quantity, qty, jumlah).
+     * Kolom tanggal (opsional: transaction_date, date, tanggal).
+5. Pengguna memeriksa pratinjau data dan dapat mengubah pilihan pemetaan kolom
+   jika nama header file berbeda dari standar.
+6. Pengguna menekan tombol "Konfirmasi & Impor ke Database".
+7. PROSES PENYIMPANAN & VALIDASI (DatasetImportService):
+   - Sistem membaca seluruh baris file.
+   - Validasi ketat: jika ada baris dengan transaction_id kosong atau item kosong,
+     sistem membatalkan impor dan memberitahu pengguna nomor baris yang salah.
+   - Normalisasi Item:
+     * Menghapus spasi berlebih (trim whitespace).
+     * Mengubah ke huruf kecil untuk pencocokan unik (case-insensitive).
+     * Menyimpan nama rapi sebagai display name.
+   - Deduplikasi Transaksi:
+     * Jika dalam satu transaksi pelanggan membeli item yang sama di baris berbeda,
+       sistem menggabungkannya menjadi 1 item unik dan menjumlahkan kuantitasnya.
+   - Database Transaction:
+     * Proses simpan ke tabel `datasets`, `transactions`, `items`, dan
+       `transaction_items` dibungkus dalam `DB::transaction()`.
+     * Jika terjadi kegagalan sistem, seluruh data otomatis di-rollback (tidak ada
+       data setengah tersimpan).
+   - File temporary dihapus setelah impor berhasil.
+8. Pengguna dialihkan ke halaman detail dataset dengan notifikasi sukses.
+
+Fitur Pendukung Dataset:
+- Download Template CSV (/datasets/template): Menyediakan file CSV contoh dengan
+  format yang langsung siap digunakan.
+- Hapus Dataset: Menghapus dataset beserta seluruh transaksi dan riwayat analisis
+  yang menggunakan dataset tersebut secara kaskade (onDelete cascade).
+
+--------------------------------------------------------------------------------
+FITUR 3: DATA TRANSAKSI (/transactions)
+--------------------------------------------------------------------------------
+Fungsi:
+Melihat dan menelusuri data transaksi penjualan riil hasil impor.
+
+Alur & Logika:
+1. Menampilkan daftar transaksi yang telah dikelompokkan per keranjang.
+2. Fitur Filter & Pencarian:
+   - Filter Dropdown berdasarkan Dataset tertentu.
+   - Pencarian berdasarkan Kode Transaksi (misal: TR001).
+3. Informasi yang ditampilkan:
+   - Kode Transaksi.
+   - Nama Dataset asal.
+   - Tanggal Transaksi (jika tersedia di file impor).
+   - Jumlah macam item yang dibeli.
+   - Tag daftar produk yang dibeli beserta kuantitasnya (contoh: Roti (2x), Susu).
+4. Pagination untuk memastikan performa tetap ringan meski transaksi berjumlah ribuan.
+
+--------------------------------------------------------------------------------
+FITUR 4: KONFIGURASI ANALISIS APRIORI (/analyses/create)
+--------------------------------------------------------------------------------
+Fungsi:
+Menentukan parameter eksperimen dan mengeksekusi algoritma Apriori.
+
+Alur Kerja:
+1. Pengguna membuka form analisis baru.
+2. Pengguna mengisi:
+   - Nama Analisis (contoh: "Analisis Penjualan Akhir Tahun").
+   - Memilih Dataset yang ingin dianalisis.
+   - Minimum Support (%) — contoh: 20%.
+   - Minimum Confidence (%) — contoh: 60%.
+   - Minimum Lift Ratio (opsional) — contoh: 1.0.
+3. Validasi Form:
+   - Minimum Support harus > 0% dan <= 100%.
+   - Minimum Confidence harus > 0% dan <= 100%.
+   - Minimum Lift harus bernilai positif jika diisi.
+   - Dataset harus memiliki transaksi yang valid.
+4. Eksekusi Analisis (AprioriService):
+   - Sistem mencatat waktu mulai (timestamp).
+   - Status diatur menjadi "processing".
+   - Algoritma Apriori berjalan secara matematis pada background/synchronous.
+   - Frequent itemset disimpan ke tabel `itemsets` dan relasi itemnya ke `itemset_items`.
+   - Aturan asosiasi dihitung dan disimpan ke tabel `association_rules`.
+   - Log iterasi per tingkatan k disimpan ke `apriori_iterations`.
+   - Status diperbarui menjadi "completed", waktu selesai dan durasi dalam milidetik dicatat.
+5. Pengguna langsung diarahkan ke halaman Hasil Analisis.
+
+--------------------------------------------------------------------------------
+FITUR 5: HALAMAN HASIL ANALISIS (/analyses/{id})
+--------------------------------------------------------------------------------
+Fungsi:
+Menyajikan hasil analisis secara komprehensif melalui 4 tab interaktif:
+
+TAB 1: OVERVIEW (RINGKASAN)
+- Kartu metrik: Total transaksi acuan, total frequent itemset yang lolos,
+  total aturan asosiasi valid.
+- Rincian parameter: Nilai Minimum Support, Minimum Confidence, Minimum Lift,
+  durasi eksekusi (ms), dan status pemrosesan.
+
+TAB 2: FREQUENT ITEMSET
+- Menampilkan seluruh kombinasi produk yang memenuhi ambang batas Minimum Support.
+- Fitur Filter Ukuran (k-itemset):
+  * Pengguna dapat memilih untuk melihat: Semua, 1-itemset, 2-itemset, 3-itemset, dst.
+- Pencarian nama produk dalam kombinasi itemset.
+- Kolom tabel:
+  * Kombinasi Item.
+  * Ukuran Itemset (k).
+  * Support Count (jumlah transaksi yang memuat kombinasi tersebut).
+  * Support (%) (persentase frekuensi relatif terhadap total transaksi).
+
+TAB 3: ASSOCIATION RULE
+- Menampilkan seluruh aturan pola pembelian yang lolos Minimum Confidence.
+- Kolom tabel:
+  * Antecedent (Jika membeli item...).
+  * Tanda panah (->).
+  * Consequent (Maka membeli item...).
+  * Support (%).
+  * Confidence (%) (ditandai dengan warna kontras).
+  * Lift Ratio.
+  * Interpretasi Lift (Badge hijau: Asosiasi Positif, Badge merah: Asosiasi Negatif,
+    Badge abu-abu: Independen).
+  * Keterangan/Penjelasan kalimat non-kausalitas:
+    Contoh: "Sebanyak 75.00% transaksi yang membeli Roti juga membeli Susu."
+    (Sistem tidak menyatakan hubungan sebab-akibat, melainkan keterkaitan probabilitas).
+- Fitur Interaktif:
+  * Pengurutan (Sorting) berdasarkan: Confidence, Support, atau Nilai Lift (Tertinggi/Terendah).
+  * Pencarian produk baik di sisi Antecedent maupun Consequent.
+  * Filter dinamis rentang Minimum Confidence dan Minimum Lift.
+  * Pagination.
+
+TAB 4: DETAIL ITERASI
+- Menampilkan transparansi proses algoritma Apriori per tingkatan iterasi (k).
+- Untuk setiap iterasi k ditampilkan:
+  * Nomor Iterasi k (C_k -> L_k).
+  * Jumlah kandidat yang dibentuk (Candidate Count).
+  * Jumlah kandidat yang lolos ambang batas (Frequent Count).
+  * Durasi waktu pemrosesan iterasi tersebut (ms).
+  * Daftar itemset yang terbentuk pada iterasi tersebut.
+- Memberikan penjelasan edukatif mengenai prinsip eliminasi kandidat yang tidak
+  memenuhi Minimum Support sesuai sifat Apriori.
+
+--------------------------------------------------------------------------------
+FITUR 6: RIWAYAT ANALISIS (/analyses)
+--------------------------------------------------------------------------------
+Fungsi:
+Menyimpan dan mengelola seluruh riwayat percobaan analisis yang pernah dijalankan.
+
+Alur & Logika:
+1. Menampilkan tabel daftar analisis yang tersimpan di database.
+2. Setiap analisis bersifat mandiri: menjalankan analisis ulang pada dataset yang sama
+   dengan parameter berbeda akan membuat record baru dan TIDAK MENIMPA analisis lama.
+3. Fitur filter riwayat berdasarkan Dataset dan Status (Completed/Failed).
+4. Tombol aksi untuk melihat kembali detail hasil analisis atau menghapus riwayat
+   analisis beserta itemset dan aturan terkait.
+
+--------------------------------------------------------------------------------
+FITUR 7: LAPORAN & EKSPOR (/reports)
+--------------------------------------------------------------------------------
+Fungsi:
+Menghasilkan dokumen resmi hasil analisis untuk kebutuhan presentasi atau dokumentasi.
+
+3 Metode Ekspor yang Tersedia:
+1. EKSPOR PDF (/analyses/{id}/export/pdf):
+   - Menggunakan library DomPDF.
+   - Format standar kertas A4 Portrait dengan tata letak minimalis dan elegan.
+   - Memuat: Judul laporan resmi, metadata analisis, tabel parameter, tabel frequent itemset,
+     tabel association rules lengkap dengan interpretasi lift, serta ringkasan kesimpulan
+     temuan aturan terkuat.
+2. EKSPOR EXCEL (/analyses/{id}/export/excel):
+   - Menggunakan library Maatwebsite Excel.
+   - Menghasilkan file spreadsheet XLSX multi-sheet:
+     * Sheet 1: "Ringkasan" (Parameter & metrik).
+     * Sheet 2: "Frequent Itemsets" (Kombinasi, k, count, support %).
+     * Sheet 3: "Association Rules" (Antecedent, Consequent, Support, Confidence, Lift, Interpretasi).
+     * Sheet 4: "Detail Iterasi" (Log langkah Ck dan Lk).
+3. CETAK LAPORAN (/analyses/{id}/print):
+   - Membuka halaman web khusus yang bersih dengan layout dokumen cetak.
+   - Mendukung pencetakan langsung melalui browser (Ctrl+P) dengan CSS `@media print`
+     yang secara otomatis menyembunyikan tombol navigasi dan menyesuaikan margin kertas.
+
+--------------------------------------------------------------------------------
+FITUR 8: PENGATURAN SISTEM & PROFIL (/settings)
+--------------------------------------------------------------------------------
+Fungsi:
+Mengelola akun pengguna dan melihat status teknis lingkungan server.
+
+Fitur:
+1. Pembaruan Profil: Mengubah Nama Lengkap dan Alamat Email administrator.
+2. Keamanan: Mengubah Kata Sandi akun dengan verifikasi kata sandi lama.
+3. Ringkasan Teknis: Menampilkan informasi versi Laravel, runtime PHP, jenis database (MySQL),
+   serta konfigurasi queue dan cache.
+
+
+================================================================================
+4. CONTOH SIMULASI PERHITUNGAN MANUAL (STUDI KASUS 5 TRANSAKSI)
+================================================================================
+
+Untuk memverifikasi kebenaran algoritma, sistem telah diuji menggunakan dataset
+standar 5 transaksi penjualan berikut:
+
+Data Transaksi:
+- T1 : Roti, Susu
+- T2 : Roti, Mentega
+- T3 : Roti, Susu, Mentega
+- T4 : Susu, Mentega
+- T5 : Roti, Susu
+
+Total Transaksi (N) = 5
+Parameter:
+- Minimum Support    = 40% (0.40) -> Minimal muncul di 2 transaksi (5 * 0.40)
+- Minimum Confidence = 60% (0.60)
+
+--------------------------------------------------------------------------------
+LANGKAH 1: PEMBENTUKAN C1 DAN L1 (1-Itemset)
+--------------------------------------------------------------------------------
+Frekuensi kemunculan setiap item:
+- Roti    : muncul di T1, T2, T3, T5 (4 kali) -> Support = 4/5 = 80% (0.80)
+- Susu    : muncul di T1, T3, T4, T5 (4 kali) -> Support = 4/5 = 80% (0.80)
+- Mentega : muncul di T2, T3, T4     (3 kali) -> Support = 3/5 = 60% (0.60)
+
+Semua item memiliki Support >= 40%, sehingga:
+L1 = { [Roti], [Susu], [Mentega] }  (3 itemset lolos)
+
+--------------------------------------------------------------------------------
+LANGKAH 2: PEMBENTUKAN C2 DAN L2 (2-Itemset)
+--------------------------------------------------------------------------------
+Penggabungan dari L1 (Join):
+Kandidat C2: [Roti, Susu], [Roti, Mentega], [Susu, Mentega]
+
+Hitung kemunculan di transaksi:
+- {Roti, Susu}    : muncul di T1, T3, T5 (3 kali) -> Support = 3/5 = 60% (0.60)
+- {Roti, Mentega} : muncul di T2, T3     (2 kali) -> Support = 2/5 = 40% (0.40)
+- {Susu, Mentega} : muncul di T3, T4     (2 kali) -> Support = 2/5 = 40% (0.40)
+
+Ketiga pasangan memiliki Support >= 40%, sehingga:
+L2 = { [Roti, Susu], [Roti, Mentega], [Susu, Mentega] } (3 itemset lolos)
+
+--------------------------------------------------------------------------------
+LANGKAH 3: PEMBENTUKAN C3 DAN L3 (3-Itemset)
+--------------------------------------------------------------------------------
+Penggabungan dari L2:
+Kandidat C3 = [Roti, Susu, Mentega]
+
+Hitung kemunculan di transaksi:
+- {Roti, Susu, Mentega} : hanya muncul di T3 (1 kali).
+Support = 1/5 = 20% (0.20).
+
+Karena Support 20% < Minimum Support 40%, kandidat ini TIDAK LOLOS.
+L3 = Kosong (0 itemset).
+Proses iterasi pembentukan kandidat berhenti di sini.
+
+Total Frequent Itemset yang tersimpan = 3 (dari L1) + 3 (dari L2) = 6 itemset.
+
+--------------------------------------------------------------------------------
+LANGKAH 4: PEMBENTUKAN ATURAN ASOSIASI (ASSOCIATION RULES)
+--------------------------------------------------------------------------------
+Aturan dibentuk dari itemset berukuran >= 2 (yaitu anggota L2):
+
+1. Dari {Roti, Susu}:
+   * Aturan: Roti -> Susu
+     - Support    = Support(Roti U Susu) = 60%
+     - Confidence = Support(Roti U Susu) / Support(Roti) = 0.60 / 0.80 = 75%
+     - Lift       = Confidence / Support(Susu) = 0.75 / 0.80 = 0.9375
+     - Status     : LOLOS (Confidence 75% >= 60%)
+
+   * Aturan: Susu -> Roti
+     - Support    = Support(Roti U Susu) = 60%
+     - Confidence = Support(Roti U Susu) / Support(Susu) = 0.60 / 0.80 = 75%
+     - Lift       = Confidence / Support(Roti) = 0.75 / 0.80 = 0.9375
+     - Status     : LOLOS (Confidence 75% >= 60%)
+
+2. Dari {Roti, Mentega}:
+   * Aturan: Mentega -> Roti
+     - Support    = Support(Roti U Mentega) = 40%
+     - Confidence = Support(Roti U Mentega) / Support(Mentega) = 0.40 / 0.60 = 66.67%
+     - Lift       = Confidence / Support(Roti) = 0.6667 / 0.80 = 0.8333
+     - Status     : LOLOS (Confidence 66.67% >= 60%)
+
+   * Aturan: Roti -> Mentega
+     - Support    = Support(Roti U Mentega) = 40%
+     - Confidence = Support(Roti U Mentega) / Support(Roti) = 0.40 / 0.80 = 50%
+     - Lift       = Confidence / Support(Mentega) = 0.50 / 0.60 = 0.8333
+     - Status     : GUGUR / DIELIMINASI (Confidence 50% < Minimum Confidence 60%)
+
+3. Dari {Susu, Mentega}:
+   * Aturan: Mentega -> Susu
+     - Support    = Support(Susu U Mentega) = 40%
+     - Confidence = Support(Susu U Mentega) / Support(Mentega) = 0.40 / 0.60 = 66.67%
+     - Lift       = Confidence / Support(Susu) = 0.6667 / 0.80 = 0.8333
+     - Status     : LOLOS (Confidence 66.67% >= 60%)
+
+   * Aturan: Susu -> Mentega
+     - Support    = Support(Susu U Mentega) = 40%
+     - Confidence = Support(Susu U Mentega) / Support(Susu) = 0.40 / 0.80 = 50%
+     - Lift       = Confidence / Support(Mentega) = 0.50 / 0.60 = 0.8333
+     - Status     : GUGUR / DIELIMINASI (Confidence 50% < Minimum Confidence 60%)
+
+KESIMPULAN HASIL ATURAN:
+Dari 6 kemungkinan aturan, sistem menghasilkan tepat 4 aturan valid yang lolos:
+1. Roti -> Susu    (Support: 60%, Confidence: 75.00%, Lift: 0.9375)
+2. Susu -> Roti    (Support: 60%, Confidence: 75.00%, Lift: 0.9375)
+3. Mentega -> Roti (Support: 40%, Confidence: 66.67%, Lift: 0.8333)
+4. Mentega -> Susu (Support: 40%, Confidence: 66.67%, Lift: 0.8333)
+
+Dua aturan lainnya (Roti -> Mentega dan Susu -> Mentega) otomatis disaring keluar
+karena memiliki Confidence 50% yang berada di bawah ambang batas minimum 60%.
+
+
+================================================================================
+5. TIPS PENGGUNAAN & TROUBLESHOOTING
+================================================================================
+
+1. Menentukan Nilai Minimum Support:
+   - Untuk dataset dengan ribuan transaksi dan varian produk yang sangat banyak
+     (misal minimarket dengan 500 produk unik), nilai Minimum Support umumnya
+     diatur pada rentang 1% hingga 5%.
+   - Jika Minimum Support diset terlalu tinggi (misal 50%), mungkin tidak ada
+     kombinasi produk yang lolos karena pola belanja pelanggan sangat bervariasi.
+   - Jika tidak ada aturan yang terbentuk, cobalah turunkan Minimum Support secara bertahap.
+
+2. Menentukan Nilai Minimum Confidence:
+   - Nilai Confidence yang lazim digunakan berada di rentang 50% s.d. 80%.
+   - Nilai Confidence menunjukkan seberapa yakin Anda bahwa produk Consequent
+     akan dibeli ketika produk Antecedent diambil.
+
+3. Memanfaatkan Nilai Lift:
+   - Prioritaskan aturan asosiasi yang memiliki nilai Lift > 1.0 untuk strategi
+     bisnis (misal diskon bundling, penataan rak bersebelahan, atau voucher rekomendasi).
+   - Aturan dengan Lift < 1.0 sebaiknya tidak dijadikan promo bundling karena
+     kedua produk tersebut cenderung saling menggantikan fungsi satu sama lain.
+
+4. Integritas File Unggahan:
+   - Pastikan file CSV atau Excel Anda memiliki baris header.
+   - Gunakan format tanggal standar (YYYY-MM-DD) jika menyertakan kolom tanggal.
+   - Jika terdapat pesan error saat impor, sistem akan menyebutkan secara jelas
+     nomor baris file yang bermasalah agar mudah diperbaiki.
+
+================================================================================
+Dibuat secara otomatis untuk dokumentasi sistem Market Basket Analysis (Apriori).
+Semua hak cipta dan kepemilikan kode berada di direktori aplikasi.
+================================================================================
