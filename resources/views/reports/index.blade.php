@@ -15,9 +15,9 @@
         <form method="GET" action="{{ route('reports.index') }}" class="flex-1 max-w-md flex items-center gap-2">
             <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama analisis..." 
                    class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-blue-500 text-slate-800">
-            <button type="submit" class="px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg">Cari</button>
+            <button type="submit" class="px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg whitespace-nowrap">Cari</button>
             @if ($search)
-                <a href="{{ route('reports.index') }}" class="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-800">Reset</a>
+                <a href="{{ route('reports.index') }}" class="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-800 whitespace-nowrap">Reset</a>
             @endif
         </form>
 
@@ -40,7 +40,59 @@
                 </a>
             </div>
         @else
-            <div class="overflow-x-auto">
+            <!-- Mobile: Card list -->
+            <div class="sm:hidden divide-y divide-slate-100">
+                @foreach ($analyses as $an)
+                    <div class="px-4 py-3">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <a href="{{ route('analyses.show', $an) }}" class="text-xs font-semibold text-slate-900 hover:text-blue-600 block truncate">
+                                    {{ $an->name }}
+                                </a>
+                                <p class="text-[11px] text-slate-400 mt-0.5 truncate">{{ $an->dataset ? $an->dataset->name : '-' }}</p>
+                                <div class="flex flex-wrap items-center gap-2 mt-1 text-[11px] font-mono text-slate-500">
+                                    <span>Supp: {{ round($an->min_support * 100, 1) }}%</span>
+                                    <span>·</span>
+                                    <span>Conf: {{ round($an->min_confidence * 100, 1) }}%</span>
+                                    <span>·</span>
+                                    <span class="text-blue-600 font-semibold">{{ number_format($an->total_rules) }} rules</span>
+                                </div>
+                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                    Selesai: {{ $an->completed_at ? $an->completed_at->format('d M Y, H:i') : $an->created_at->format('d M Y') }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100">
+                            <a href="{{ route('analyses.export.pdf', $an) }}" 
+                               class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-medium bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-md transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                PDF
+                            </a>
+
+                            <a href="{{ route('analyses.export.excel', $an) }}" 
+                               class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-md transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Excel
+                            </a>
+
+                            <a href="{{ route('analyses.print', $an) }}" target="_blank"
+                               class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                Cetak
+                            </a>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Desktop: Table -->
+            <div class="hidden sm:block overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead class="bg-slate-50/75 text-slate-500 border-b border-slate-100 font-medium">
                         <tr>
@@ -103,7 +155,7 @@
                 </table>
             </div>
 
-            <div class="px-5 py-3 border-t border-slate-100">
+            <div class="px-4 sm:px-5 py-3 border-t border-slate-100">
                 {{ $analyses->links() }}
             </div>
         @endif

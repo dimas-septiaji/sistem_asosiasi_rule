@@ -80,9 +80,9 @@
     </div>
 
     <!-- Application Environment Info Card -->
-    <div class="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+    <div class="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-xs space-y-4">
         <h3 class="text-sm font-semibold text-slate-900">Informasi Lingkungan Sistem</h3>
-        <dl class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs font-mono">
+        <dl class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 text-xs font-mono">
             <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/60">
                 <dt class="text-slate-400 text-[10px]">APLIKASI</dt>
                 <dd class="text-slate-800 font-semibold mt-0.5 truncate">{{ $appInfo['app_name'] }}</dd>

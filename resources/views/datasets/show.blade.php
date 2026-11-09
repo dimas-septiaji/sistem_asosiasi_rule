@@ -11,28 +11,30 @@
 @endsection
 
 @section('topbar_actions')
-    <a href="{{ route('transactions.index', ['dataset_id' => $dataset->id]) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-xs">
-        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{{ route('transactions.index', ['dataset_id' => $dataset->id]) }}" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-xs" title="Lihat Transaksi">
+        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
-        Lihat Semua Transaksi
+        <span class="hidden sm:inline">Lihat Semua Transaksi</span>
+        <span class="sm:hidden">Transaksi</span>
     </a>
-    <a href="{{ route('analyses.create', ['dataset_id' => $dataset->id]) }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-xs">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <a href="{{ route('analyses.create', ['dataset_id' => $dataset->id]) }}" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-xs" title="Jalankan Analisis">
+        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
-        Jalankan Analisis Apriori
+        <span class="hidden sm:inline">Jalankan Analisis Apriori</span>
+        <span class="sm:hidden">Analisis</span>
     </a>
 @endsection
 
 @section('content')
 <div class="space-y-6">
     <!-- Dataset Summary Header -->
-    <div class="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs">
+    <div class="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-xs">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <div class="flex items-center gap-2">
-                    <h2 class="text-lg font-bold text-slate-900">{{ $dataset->name }}</h2>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900">{{ $dataset->name }}</h2>
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                         {{ ucfirst($dataset->status) }}
                     </span>
@@ -40,27 +42,27 @@
                 <p class="text-xs text-slate-500 mt-1 max-w-2xl">
                     {{ $dataset->description ?: 'Tidak ada deskripsi tambahan untuk dataset ini.' }}
                 </p>
-                <div class="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-3 font-mono">
-                    <span>File: <strong class="text-slate-700 font-medium">{{ $dataset->original_filename }}</strong></span>
-                    <span>•</span>
+                <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-400 mt-3 font-mono">
+                    <span>File: <strong class="text-slate-700 font-medium break-all">{{ $dataset->original_filename }}</strong></span>
+                    <span class="hidden sm:inline">•</span>
                     <span>Format: <strong class="text-slate-700 font-medium uppercase">{{ $dataset->file_type }}</strong></span>
-                    <span>•</span>
+                    <span class="hidden sm:inline">•</span>
                     <span>Diimpor: <strong class="text-slate-700 font-medium">{{ $dataset->imported_at ? $dataset->imported_at->format('d M Y, H:i') : '-' }}</strong></span>
                 </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-3 shrink-0">
-                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/60 text-center">
-                    <p class="text-[11px] font-medium text-slate-500">Total Baris</p>
-                    <p class="text-base font-bold text-slate-900 mt-0.5 font-mono">{{ number_format($dataset->total_rows) }}</p>
+            <div class="grid grid-cols-3 gap-2 sm:gap-3 shrink-0">
+                <div class="bg-slate-50 p-2.5 sm:p-3 rounded-lg border border-slate-200/60 text-center">
+                    <p class="text-[10px] sm:text-[11px] font-medium text-slate-500">Total Baris</p>
+                    <p class="text-sm sm:text-base font-bold text-slate-900 mt-0.5 font-mono">{{ number_format($dataset->total_rows) }}</p>
                 </div>
-                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/60 text-center">
-                    <p class="text-[11px] font-medium text-slate-500">Transaksi</p>
-                    <p class="text-base font-bold text-blue-600 mt-0.5 font-mono">{{ number_format($dataset->total_transactions) }}</p>
+                <div class="bg-slate-50 p-2.5 sm:p-3 rounded-lg border border-slate-200/60 text-center">
+                    <p class="text-[10px] sm:text-[11px] font-medium text-slate-500">Transaksi</p>
+                    <p class="text-sm sm:text-base font-bold text-blue-600 mt-0.5 font-mono">{{ number_format($dataset->total_transactions) }}</p>
                 </div>
-                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200/60 text-center">
-                    <p class="text-[11px] font-medium text-slate-500">Item Unik</p>
-                    <p class="text-base font-bold text-slate-900 mt-0.5 font-mono">{{ number_format($dataset->total_items) }}</p>
+                <div class="bg-slate-50 p-2.5 sm:p-3 rounded-lg border border-slate-200/60 text-center">
+                    <p class="text-[10px] sm:text-[11px] font-medium text-slate-500">Item Unik</p>
+                    <p class="text-sm sm:text-base font-bold text-slate-900 mt-0.5 font-mono">{{ number_format($dataset->total_items) }}</p>
                 </div>
             </div>
         </div>
